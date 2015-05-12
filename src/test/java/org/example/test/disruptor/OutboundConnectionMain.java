@@ -39,9 +39,9 @@ public class OutboundConnectionMain {
         MessageListener listener = container.createListener("amqp://0.0.0.0:5672/foo");
         listener.setHandler(new LmaxMessageProcessor(disruptor));
 
-        MessageSender sender = container.createSender("amqp://0.0.0.0:5672/foo");
+        MessageSender sender = container.createSender("amqp://0.0.0.0:5672/bar");
 
-        disruptor.handleEventsWith(new MessageEventHandler(null));
+        disruptor.handleEventsWith(new MessageEventHandler(sender));
         disruptor.start();
 
         // this blocks for now

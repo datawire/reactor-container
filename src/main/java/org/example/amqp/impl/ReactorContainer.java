@@ -17,7 +17,7 @@ public class ReactorContainer implements MessageContainer {
     public static int DEFAULT_PORT = 5672;
 
     Reactor reactor;
-    String host;
+    String host=null;
     int port;
 
     public ReactorContainer(String host, int port) {
@@ -65,11 +65,12 @@ public class ReactorContainer implements MessageContainer {
                 destination.setPort(5672);
                 destination.setAddress(address);
             }
-            messageSender = new ProtonMessageSender(destination.getHost()+":"+destination.getPort(), address, reactor);
+            messageSender = new ProtonMessageSender(destination.getHost()+":"+destination.getPort(), destination.getAddress(), reactor);
         } else {
             messageSender = new ProtonMessageSender(address, reactor);
-            reactor.getHandler().add(messageSender);
+
         }
+        reactor.getHandler().add(messageSender);
         return messageSender;
     }
 

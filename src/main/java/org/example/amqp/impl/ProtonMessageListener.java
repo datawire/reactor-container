@@ -20,6 +20,8 @@
  */
 package org.example.amqp.impl;
 
+import org.apache.qpid.proton.amqp.messaging.Source;
+import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.engine.*;
 import org.apache.qpid.proton.message.Message;
 import org.apache.qpid.proton.message.MessageFormat;
@@ -37,12 +39,12 @@ public class ProtonMessageListener extends BaseHandler implements MessageListene
     private Receiver receiver = null;
 
     ProtonMessageListener(String address) {
-        //this.receiver = receiver;
+
         this.address = address;
     }
 
     ProtonMessageListener(String hostname, String address) {
-        //this.receiver = receiver;
+
         this.address = address;
         this.hostname = hostname;
     }
@@ -75,20 +77,22 @@ public class ProtonMessageListener extends BaseHandler implements MessageListene
             try {
                 Connection conn = e.getConnection();
                 conn.setHostname(hostname);
-
-                // Every session or link could have their own handler(s) if we
-                // wanted simply by adding the handler to the given session
-                // or link
                 Session ssn = conn.session();
 
-                // If a link doesn't have an event handler, the events go to
-                // its parent session. If the session doesn't have a handler
-                // the events go to its parent connection. If the connection
-                // doesn't have a handler, the events go to the reactor.
-                Sender snd = ssn.sender(this.address);
+                Receiver rcv = ssn.receiver(this.address);
+
+                Source src = new Source();
+                src.setAddress(this.address);
+                rcv.setSource(src);
+
+                Target tgt = new Target();
+                tgt.setAddress(this.address);
+                rcv.setTarget(tgt);
+
                 conn.open();
                 ssn.open();
-                snd.open();
+                rcv.open();
+
             } catch (Exception e1) {
                 e1.printStackTrace();
             }

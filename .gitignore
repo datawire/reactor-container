@@ -1,0 +1,16 @@
+.project
+.classpath
+.factorypath
+.settings/
+target/
+test-output/
+*.log
+*.mul
+.checkstyle
+.env
+*~
+\#*\#
+.\#*
+*.iml
+.idea/
+.DS*

@@ -10,6 +10,8 @@ import org.example.amqp.MessageSender;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created by jamesmartin on 5/5/15.
@@ -27,7 +29,7 @@ public class ProtonMessageSender extends BaseHandler implements MessageSender {
     private String address;
     private String hostname = null;
     private Reactor reactor;
-    private Sender sender ;
+    private Set<Sender> senders = new HashSet<Sender>();
 
     ProtonMessageSender(String address, Reactor reactor) {
         this.address = address;
@@ -82,31 +84,26 @@ public class ProtonMessageSender extends BaseHandler implements MessageSender {
         }
     }
 
-//    public void onLinkLocalOpen(Event e) {
-//        if (e.getLink() instanceof Sender) {
-//            Sender sender = (Sender) e.getLink();
-//            this.senders.add(sender);
-//        }
-//    }
 
-//    @Override
-//    public void onLinkFinal(Event e) {
-//        if (e.getLink() instanceof Sender) {
-//            Sender sender = (Sender) e.getLink();
-//            this.senders.remove(sender);
-//            System.out.println(String.format("Total sent: %s", sent));
-//        }
-//    }
+    @Override
+    public void onLinkFinal(Event e) {
+        if (e.getLink() instanceof Sender) {
+            Sender sender = (Sender) e.getLink();
+            this.senders.remove(sender);
+            System.out.println(String.format("Total sent: %s", sent));
+        }
+    }
 
     @Override
     public void onReactorQuiesced(Event e) {
-        if (this.sender != null)
-            _sendInternal(sender);
+        if (this.senders.contains(e.getLink())) {
+            _sendInternal((Sender) e.getLink());
+        }
     }
 
     @Override
     public void onLinkFlow(Event e) {
-        if (e.getLink() instanceof Sender) {
+        if (senders.contains(e.getLink())) {
             this._sendInternal((Sender) e.getLink());
         }
     }
@@ -166,14 +163,15 @@ public class ProtonMessageSender extends BaseHandler implements MessageSender {
         System.out.println("transport error");
     }
 
-    public void onLinkLocalOpen(Event evt) {
-        if (evt.getLink() instanceof Sender) {
-
-            Sender sender = (Sender) evt.getLink();
+    @Override
+    public void onLinkLocalOpen(Event e) {
+        if (e.getLink() instanceof Sender) {
+            Sender sender = (Sender) e.getLink();
             System.out.println("SENDER OPEN: "+sender.getTarget().getAddress());
             if (sender.getTarget().getAddress().equals(this.address)) {
-                this.sender = sender;
+                this.senders.add(sender);
             }
+
         }
     }
 
@@ -181,8 +179,9 @@ public class ProtonMessageSender extends BaseHandler implements MessageSender {
     public void onLinkLocalClose(Event e) {
         if (e.getLink() instanceof Sender) {
 
-            if (this.sender != null && e.getLink() == this.sender)
-                this.sender = null;
+            if (this.senders.contains(e.getLink())) {
+                this.senders.remove(e.getLink());
+            }
         }
     }
 }

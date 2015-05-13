@@ -28,6 +28,8 @@ import org.apache.qpid.proton.message.MessageFormat;
 import org.example.amqp.MessageHandler;
 import org.example.amqp.MessageListener;
 
+import java.util.HashSet;
+import java.util.Set;
 
 
 public class ProtonMessageListener extends BaseHandler implements MessageListener {
@@ -36,7 +38,7 @@ public class ProtonMessageListener extends BaseHandler implements MessageListene
     private MessageHandler handler;
     private String address;
     private String hostname = null;
-    private Receiver receiver = null;
+    private Set<Receiver> receivers = new HashSet<Receiver>();
 
     ProtonMessageListener(String address) {
 
@@ -52,7 +54,7 @@ public class ProtonMessageListener extends BaseHandler implements MessageListene
     @Override
     public void onDelivery(Event evt) {
         Delivery dlv = evt.getDelivery();
-        if (dlv.getLink() instanceof Receiver) {
+        if (dlv.getLink() instanceof Receiver && this.receivers.contains(dlv.getLink())) {
             Receiver receiver = (Receiver) dlv.getLink();
             if (!dlv.isPartial()) {
                 byte[] bytes = new byte[dlv.pending()];
@@ -124,7 +126,7 @@ public class ProtonMessageListener extends BaseHandler implements MessageListene
             Receiver receiver = (Receiver) e.getLink();
             System.out.println("RECEIVER OPEN: "+receiver.getSource().getAddress());
             if (receiver.getSource().getAddress().equals(this.address)) {
-                this.receiver = receiver;
+                this.receivers.add(receiver);
 
             }
         }
@@ -133,8 +135,8 @@ public class ProtonMessageListener extends BaseHandler implements MessageListene
 
     @Override
     public void onLinkLocalClose(Event e) {
-        if (this.receiver != null && e.getLink() == this.receiver) {
-            this.receiver = null;
+        if (this.receivers.contains(e.getLink())) {
+            this.receivers.remove(e.getLink());
             System.out.println(">>>> nulling receiver");
         }
     }

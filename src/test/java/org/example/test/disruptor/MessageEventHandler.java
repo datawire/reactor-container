@@ -24,7 +24,8 @@ public class MessageEventHandler implements EventHandler<MessageEvent> {
 
             //System.out.println(String.format("Got message: %s, %s", amqpValue.getValue().toString(), l));
 
-            sender.send(message);
+            if (sender != null)
+                sender.send(message);
         } catch (Exception e) {
             e.printStackTrace();
         }

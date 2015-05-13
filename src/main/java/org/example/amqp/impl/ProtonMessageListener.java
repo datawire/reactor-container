@@ -43,22 +43,25 @@ public class ProtonMessageListener extends BaseHandler implements MessageListene
     ProtonMessageListener(String address) {
 
         this.address = address;
+
     }
 
     ProtonMessageListener(String hostname, String address) {
 
         this.address = address;
         this.hostname = hostname;
+        this.add(new FlowController(1024));
     }
 
     @Override
     public void onDelivery(Event evt) {
+
         Delivery dlv = evt.getDelivery();
         if (dlv.getLink() instanceof Receiver && this.receivers.contains(dlv.getLink())) {
             Receiver receiver = (Receiver) dlv.getLink();
             if (!dlv.isPartial()) {
                 byte[] bytes = new byte[dlv.pending()];
-                //System.out.println("received "+dlv.pending()+ " bytes");
+                System.out.println("received "+dlv.pending()+ " bytes");
                 receiver.recv(bytes, 0, bytes.length);
 
                 Message message = Message.Factory.create();
@@ -82,14 +85,14 @@ public class ProtonMessageListener extends BaseHandler implements MessageListene
                 conn.setHostname(hostname);
                 Session ssn = conn.session();
 
-                Receiver rcv = ssn.receiver(this.address);
+                Receiver rcv = ssn.receiver(this.address+"-//"+this.hostname);
 
                 Source src = new Source();
                 src.setAddress(this.address);
                 rcv.setSource(src);
 
                 Target tgt = new Target();
-                tgt.setAddress(this.address);
+                tgt.setAddress("//" + this.hostname);
                 rcv.setTarget(tgt);
 
                 conn.open();
@@ -118,6 +121,7 @@ public class ProtonMessageListener extends BaseHandler implements MessageListene
     public void onLinkFinal(Event evt) {
         if (evt.getLink() instanceof Receiver) {
             System.out.println(String.format("Total received: %s", received));
+            this.receivers.remove(evt.getLink());
         }
     }
 
@@ -125,8 +129,9 @@ public class ProtonMessageListener extends BaseHandler implements MessageListene
     public void onLinkLocalOpen(Event e) {
         if (e.getLink() instanceof Receiver) {
             Receiver receiver = (Receiver) e.getLink();
-            System.out.println("RECEIVER OPEN: "+receiver.getSource().getAddress());
+            System.out.println("RECEIVER OPENED: "+receiver.getSource().getAddress());
             if (receiver.getSource().getAddress().equals(this.address)) {
+                System.out.println("RECEIVER ADDED: "+receiver.getSource().getAddress());
                 this.receivers.add(receiver);
 
             }
@@ -136,7 +141,7 @@ public class ProtonMessageListener extends BaseHandler implements MessageListene
 
     @Override
     public void onLinkLocalClose(Event e) {
-        if (this.receivers.contains(e.getLink())) {
+        if (e.getLink() instanceof Receiver) {
             this.receivers.remove(e.getLink());
             System.out.println(">>>> nulling receiver");
         }

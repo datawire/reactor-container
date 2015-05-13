@@ -22,10 +22,14 @@ public class MessageEventHandler implements EventHandler<MessageEvent> {
             Message message = messageEvent.getMessage();
             AmqpValue amqpValue = (AmqpValue)message.getBody();
 
+            Message message1 = Message.Factory.create();
+
+            message1.setBody(amqpValue);
+
             //System.out.println(String.format("Got message: %s, %s", amqpValue.getValue().toString(), l));
 
             if (sender != null)
-                sender.send(message);
+                sender.send(message1);
         } catch (Exception e) {
             e.printStackTrace();
         }

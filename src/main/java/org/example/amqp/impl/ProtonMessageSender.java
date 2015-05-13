@@ -1,5 +1,7 @@
 package org.example.amqp.impl;
 
+import org.apache.qpid.proton.amqp.messaging.AmqpValue;
+import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.engine.*;
@@ -40,6 +42,7 @@ public class ProtonMessageSender extends BaseHandler implements MessageSender {
         this.hostname = hostname;
         this.address = address;
         this.reactor = reactor;
+        //this.add(new Handshaker());
     }
 
     private byte[] nextTag() {
@@ -59,26 +62,29 @@ public class ProtonMessageSender extends BaseHandler implements MessageSender {
     }
 
     public void _sendInternal(Sender sender) {
-        //System.out.println("sendInternal");
+
         // not sure why 1024 is used for queued messages
-        while (sender.getCredit() > 0 && sender.getQueued() < 1024) {
+        while (sender.getCredit() > 0) {
             Message message = null;
             synchronized (messages) {
                 if (messages.peek() == null) {
-                    sender.drained();
+                    //sender.drained();
                     return;
                 }
                 message = this.messages.remove();
             }
+
+            System.out.println("sendInternal");
 
             Delivery dlv = sender.delivery(nextTag());
 
             // ok this is really crappy. we need to interrogate the message to get its actual size
             byte[] bytes = new byte[MAX_SIZE];
             int actualSize = message.encode(bytes, 0, MAX_SIZE);
+
             sender.send(bytes, 0, actualSize);
             sender.advance();
-            dlv.settle();
+            //dlv.settle();
             sent++;
 
             //System.out.println(String.format("Sent message(%s): %s", sender.getTarget().getAddress(), message));
@@ -134,9 +140,9 @@ public class ProtonMessageSender extends BaseHandler implements MessageSender {
 
                 Session ssn = conn.session();
 
-                Sender snd = ssn.sender(this.address);
+                Sender snd = ssn.sender(this.address+"-//"+this.hostname);
                 Source src = new Source();
-                src.setAddress(this.address);
+                src.setAddress("//"+this.hostname);
                 snd.setSource(src);
 
                 Target tgt = new Target();

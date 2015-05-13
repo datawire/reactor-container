@@ -58,6 +58,7 @@ public class ProtonMessageListener extends BaseHandler implements MessageListene
             Receiver receiver = (Receiver) dlv.getLink();
             if (!dlv.isPartial()) {
                 byte[] bytes = new byte[dlv.pending()];
+                //System.out.println("received "+dlv.pending()+ " bytes");
                 receiver.recv(bytes, 0, bytes.length);
 
                 Message message = Message.Factory.create();

@@ -39,7 +39,7 @@ public class MessageDisruptorMain  {
         MessageListener listener = container.createListener("foo");
         listener.setHandler(new LmaxMessageProcessor(disruptor));
 
-        MessageSender sender = container.createSender("foo");
+        MessageSender sender = container.createSender("bar");
 
         disruptor.handleEventsWith(new MessageEventHandler(sender));
         disruptor.start();

@@ -76,6 +76,7 @@ public class ReactorContainer implements MessageContainer {
 
     public void init() throws IOException {
         if (this.host != null) {
+            System.out.println("Container listening on port "+port);
             reactor.acceptor(host, port);
         }
     }

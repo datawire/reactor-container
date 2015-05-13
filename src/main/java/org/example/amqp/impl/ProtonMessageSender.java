@@ -59,6 +59,7 @@ public class ProtonMessageSender extends BaseHandler implements MessageSender {
     }
 
     public void _sendInternal(Sender sender) {
+        //System.out.println("sendInternal");
         // not sure why 1024 is used for queued messages
         while (sender.getCredit() > 0 && sender.getQueued() < 1024) {
             Message message = null;
@@ -96,14 +97,14 @@ public class ProtonMessageSender extends BaseHandler implements MessageSender {
 
     @Override
     public void onReactorQuiesced(Event e) {
-        if (this.senders.contains(e.getLink())) {
-            _sendInternal((Sender) e.getLink());
+        for (Sender sender : senders) {
+            _sendInternal(sender);
         }
     }
 
     @Override
     public void onLinkFlow(Event e) {
-        if (senders.contains(e.getLink())) {
+        if (e.getLink() instanceof Sender && senders.contains(e.getLink())) {
             this._sendInternal((Sender) e.getLink());
         }
     }
@@ -160,15 +161,16 @@ public class ProtonMessageSender extends BaseHandler implements MessageSender {
 
     @Override
     public void onTransportError(Event e) {
-        System.out.println("transport error");
+        System.out.println("transport error: "+e.getTransport().getCondition());
     }
 
     @Override
     public void onLinkLocalOpen(Event e) {
         if (e.getLink() instanceof Sender) {
             Sender sender = (Sender) e.getLink();
-            System.out.println("SENDER OPEN: "+sender.getTarget().getAddress());
+
             if (sender.getTarget().getAddress().equals(this.address)) {
+                System.out.println("SENDER OPEN: "+sender.getTarget().getAddress());
                 this.senders.add(sender);
             }
 

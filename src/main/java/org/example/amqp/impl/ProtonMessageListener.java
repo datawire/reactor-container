@@ -83,6 +83,12 @@ public class ProtonMessageListener extends BaseHandler implements MessageListene
             try {
                 Connection conn = e.getConnection();
                 conn.setHostname(hostname);
+                Transport transport = Transport.Factory.create();
+                Sasl sasl = transport.sasl();
+                sasl.setMechanisms("ANONYMOUS");
+                sasl.client();
+                conn.setContainer("test");
+
                 Session ssn = conn.session();
 
                 Receiver rcv = ssn.receiver(this.address+"-//"+this.hostname);

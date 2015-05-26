@@ -1,5 +1,6 @@
 package org.example.amqp.impl;
 
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.amqp.messaging.Source;
@@ -10,10 +11,7 @@ import org.apache.qpid.proton.reactor.Reactor;
 import org.example.amqp.MessageSender;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by jamesmartin on 5/5/15.
@@ -73,8 +71,6 @@ public class ProtonMessageSender extends BaseHandler implements MessageSender {
                 }
                 message = this.messages.remove();
             }
-
-            System.out.println("sendInternal");
 
             Delivery dlv = sender.delivery(nextTag());
 
@@ -137,6 +133,14 @@ public class ProtonMessageSender extends BaseHandler implements MessageSender {
             try {
                 Connection conn = e.getConnection();
                 conn.setHostname(hostname);
+                Transport transport = Transport.Factory.create();
+                Sasl sasl = transport.sasl();
+                sasl.setMechanisms("ANONYMOUS");
+                sasl.client();
+                transport.bind(conn);
+                // need to set this because activemq requires a clientID
+                // for the connection. not sure why it's called 'container'
+                conn.setContainer("test");
 
                 Session ssn = conn.session();
 
